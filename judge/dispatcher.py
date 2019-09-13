@@ -197,9 +197,9 @@ class JudgeDispatcher(DispatcherBase):
             for past_submission in Submission.objects.filter(user_id=self.submission.user_id, problem=self.problem):
                 if past_submission.id == self.submission.id:
                     continue
-                #溯及既往
+                # 溯及既往
                 if past_submission.result != JudgeStatus.ACCEPTED:
-                    past_submission.delete() 
+                    past_submission.delete()
                 if past_submission.result == JudgeStatus.ACCEPTED:
                     no_ac = False
             if no_ac or self.submission.result == JudgeStatus.SYSTEM_ERROR:
