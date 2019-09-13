@@ -183,18 +183,25 @@ class JudgeDispatcher(DispatcherBase):
                 self.submission.result = JudgeStatus.PARTIALLY_ACCEPTED
         # 如果該次繳交全對：如程式碼與未曾繳交過，則保留，否則拋棄
         if self.submission.result == JudgeStatus.ACCEPTED:
-            for past_submission in Submission.objects.filter(user_id=self.submission.user_id):
+            for past_submission in Submission.objects.filter(id!=self.submission.id, user_id=self.submission.user_id, problem=self.problem):
                 if past_submission.code == self.submission.code:
                     past_submission.delete()
-                if past_submission.result != JudgeStatus.ACCEPTED:
+                if past_submission.result != JudgeStatus.ACCEPTED and past_submission.result != JudgeStatus.SYSTEM_ERROR\
+                    past_submission.result != JudgeStatus.PENDING and past_submission.result != JudgeStatus.JUDGING:
                     past_submission.delete()
             self.submission.save()
         # 如果該次繳交未對：未曾AC，則保留，否則拋棄
         else:
-            for past_submission in Submission.objects.filter(user_id=self.submission.user_id):
+            no_ac = True
+            for past_submission in Submission.objects.filter(id!=self.submission.id, user_id=self.submission.user_id, problem=self.problem):
+                #溯及既往
+                if past_submission.result != JudgeStatus.ACCEPTED and past_submission.result != JudgeStatus.SYSTEM_ERROR\
+                    past_submission.result != JudgeStatus.PENDING and past_submission.result != JudgeStatus.JUDGING:
+                    past_submission.delete() 
                 if past_submission.result == JudgeStatus.ACCEPTED:
-                    break
-            self.submission.save()
+                    no_ac = False
+            if no_ac:
+                self.submission.save()
         if self.contest_id:
             if self.contest.status != ContestStatus.CONTEST_UNDERWAY or \
                     User.objects.get(id=self.submission.user_id).is_contest_admin(self.contest):
