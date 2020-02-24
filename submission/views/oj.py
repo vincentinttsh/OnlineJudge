@@ -120,6 +120,8 @@ class SubmissionAPI(APIView):
             return self.error("No permission to share the submission")
         if submission.contest and submission.contest.status == ContestStatus.CONTEST_UNDERWAY:
             return self.error("Can not share submission now")
+        if not request.user.is_admin_role():
+            return self.error("No permission to share the submission")
         submission.shared = request.data["shared"]
         submission.save(update_fields=["shared"])
         return self.success()
