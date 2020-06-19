@@ -1,7 +1,8 @@
 import os
 import re
 import xlsxwriter
-
+from django.conf import settings
+from importlib import import_module
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.http import HttpResponse
@@ -9,7 +10,7 @@ from django.contrib.auth.hashers import make_password
 
 from submission.models import Submission
 from utils.api import APIView, validate_serializer
-from utils.shortcuts import rand_str
+from utils.shortcuts import rand_str, datetime2str
 
 from ..decorators import super_admin_required
 from ..models import AdminType, ProblemPermission, User, UserProfile
@@ -200,6 +201,7 @@ class GenerateUserAPI(APIView):
             #    duplicate key value violates unique constraint "user_username_key"
             #    DETAIL:  Key (username)=(root11) already exists.
             return self.error(str(e).split("\n")[1])
+
 
 class SessionManagementAPI(APIView):
     @super_admin_required
