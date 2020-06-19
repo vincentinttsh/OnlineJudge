@@ -1,7 +1,8 @@
 import os
 import re
 import xlsxwriter
-
+from django.conf import settings
+from importlib import import_module
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.http import HttpResponse
@@ -9,7 +10,7 @@ from django.contrib.auth.hashers import make_password
 
 from submission.models import Submission
 from utils.api import APIView, validate_serializer
-from utils.shortcuts import rand_str
+from utils.shortcuts import rand_str, datetime2str
 
 from ..decorators import super_admin_required
 from ..models import AdminType, ProblemPermission, User, UserProfile
@@ -200,3 +201,28 @@ class GenerateUserAPI(APIView):
             #    duplicate key value violates unique constraint "user_username_key"
             #    DETAIL:  Key (username)=(root11) already exists.
             return self.error(str(e).split("\n")[1])
+
+
+class SessionManagementAPI(APIView):
+    @super_admin_required
+    def get(self, request):
+        engine = import_module(settings.SESSION_ENGINE)
+        session_store = engine.SessionStore
+        result = []
+        username = request.GET.get("username")
+        if not username:
+            return self.error("Invalid Parameter, username is required")
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return self.error("User does not exist")
+        session_keys = user.session_keys
+        for key in session_keys[:]:
+            session = session_store(key)
+            s = {}
+            s["ip"] = session["ip"]
+            s["user_agent"] = session["user_agent"]
+            s["last_activity"] = datetime2str(session["last_activity"])
+            s["session_key"] = key
+            result.append(s)
+        return self.success(result)
