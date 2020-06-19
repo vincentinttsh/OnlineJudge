@@ -200,3 +200,27 @@ class GenerateUserAPI(APIView):
             #    duplicate key value violates unique constraint "user_username_key"
             #    DETAIL:  Key (username)=(root11) already exists.
             return self.error(str(e).split("\n")[1])
+
+class SessionManagementAPI(APIView):
+    @super_admin_required
+    def get(self, request):
+        engine = import_module(settings.SESSION_ENGINE)
+        session_store = engine.SessionStore
+        result = []
+        username = request.GET.get("username")
+        if not user_id:
+            return self.error("Invalid Parameter, username is required")
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return self.error("User does not exist")
+        session_keys = user.session_keys
+        for key in session_keys[:]:
+            session = session_store(key)
+            s = {}
+            s["ip"] = session["ip"]
+            s["user_agent"] = session["user_agent"]
+            s["last_activity"] = datetime2str(session["last_activity"])
+            s["session_key"] = key
+            result.append(s)
+        return self.success(result)
