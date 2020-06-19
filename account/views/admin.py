@@ -210,7 +210,7 @@ class SessionManagementAPI(APIView):
         session_store = engine.SessionStore
         result = []
         username = request.GET.get("username")
-        if not user_id:
+        if not username:
             return self.error("Invalid Parameter, username is required")
         try:
             user = User.objects.get(username=username)
