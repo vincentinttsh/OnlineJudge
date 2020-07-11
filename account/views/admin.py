@@ -219,6 +219,10 @@ class SessionManagementAPI(APIView):
         session_keys = user.session_keys
         for key in session_keys[:]:
             session = session_store(key)
+
+            if not session._session:
+                continue
+
             s = {}
             s["ip"] = session["ip"]
             s["user_agent"] = session["user_agent"]
